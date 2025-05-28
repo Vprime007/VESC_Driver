@@ -1,7 +1,7 @@
 /******************************************************************************
 *   Includes
 *******************************************************************************/
-
+#include "VESCDriver.h"
 
 /******************************************************************************
 *   Private Definitions
@@ -41,7 +41,27 @@
 /******************************************************************************
 *   Public Functions Definitions
 *******************************************************************************/
+VESC_Ret_t VESC_InitDriver(void){
 
+    return VESC_STATUS_OK;
+}
+
+VESC_Ret_t VESC_AddDriver(VESC_Handle_t *pHandle){
+
+    return VESC_STATUS_OK;
+}
+
+VESC_Ret_t VESC_RemoveDriver(VESC_Handle_t handle){
+
+    return VESC_STATUS_OK;
+}
+
+VESC_Ret_t VESC_SendCmd(VESC_Command_t command, 
+                        VESC_CmdReturnCallback callback, 
+                        VESC_Handle_t handle){
+
+    return VESC_STATUS_OK;
+}
 
 /******************************************************************************
 *   Interrupts
