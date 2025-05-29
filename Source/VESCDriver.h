@@ -2,7 +2,9 @@
 #define _VESC_DRIVER_H
 
 #include <stdint.h>
+
 #include "datatypes.h"
+#include "VESCDriver_cfg.h"
 
 /******************************************************************************
 *   Public Definitions
@@ -18,6 +20,8 @@
 *   Public Data Types
 *******************************************************************************/
 typedef uint8_t (VESC_Handle_t);
+
+typedef void(*VESC_SendOutDataFunc)(uint8_t *pData, uint16_t length);
 typedef void(*VESC_CmdReturnCallback)(COMM_PACKET_ID command_id, 
                                       uint8_t *pData, 
                                       uint16_t length);
@@ -46,12 +50,71 @@ typedef enum VESC_Ret_e{
 /******************************************************************************
 *   Public Functions
 *******************************************************************************/
+/***************************************************************************//*!
+*  \brief VESC Driver initialization.
+*
+*   This function is used to init the VESC Driver module.
+*   
+*   Preconditions: None.
+*
+*   Side Effects: None.
+*
+*   \return     operation status
+*
+*******************************************************************************/
 VESC_Ret_t VESC_InitDriver(void);
 
-VESC_Ret_t VESC_AddDriver(VESC_Handle_t *pHandle);
+/***************************************************************************//*!
+*  \brief Add VESC driver instance.
+*
+*   This function is used to add a VESC driver instance to the module.
+*   
+*   Preconditions: None.
+*
+*   Side Effects: None.
+*
+*   \param[in]   data_out_func      Function used to send byte out to VESC.
+*   \param[out]  pHandle            VESC Driver instance handle.
+*
+*   \return     operation status
+*
+*******************************************************************************/
+VESC_Ret_t VESC_AddDriver(VESC_SendOutDataFunc data_out_func, VESC_Handle_t *pHandle);
 
+/***************************************************************************//*!
+*  \brief Remove VESC driver instance.
+*
+*   This function is used to remove a VESC driver instance to the module.
+*   
+*   Preconditions: None.
+*
+*   Side Effects: None.
+*
+*   \param[in]  handle              VESC Driver instance handle.
+*
+*   \return     operation status
+*
+*******************************************************************************/
 VESC_Ret_t VESC_RemoveDriver(VESC_Handle_t handle);
 
+/***************************************************************************//*!
+*  \brief Send command to VESC instance
+*
+*   This function is used to send a command to a VESC Driver instance.
+*
+*   If you want to get a return answer from the VESC, use the VESC_CmdReturnCallback.
+*
+*   Preconditions: Instance is active
+*
+*   Side Effects: None.
+*
+*   \param[in]    command            Command to send.
+*   \param[in]    callback           Command return callback.
+*   \param[in]    handle             VESC Driver instance handle.
+*
+*   \return     operation status
+*
+*******************************************************************************/
 VESC_Ret_t VESC_SendCmd(VESC_Command_t command, 
                         VESC_CmdReturnCallback callback, 
                         VESC_Handle_t handle);
