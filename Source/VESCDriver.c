@@ -45,6 +45,7 @@ typedef struct VESC_Driver_s{
 *******************************************************************************/
 static bool isDriverTableFull(void);
 static uint8_t getFirstAvailableDriverIndex(void);
+static void processIncomingByte(uint8_t byte, VESC_Handle_t handle); 
 
 /******************************************************************************
 *   Public Variables
@@ -106,6 +107,69 @@ static uint8_t getFirstAvailableDriverIndex(void){
     }
 
     return INVALID_DRIVER_INDEX;
+}
+
+/***************************************************************************//*!
+*  \brief Process incoming byte for driver instance
+*
+*   This function process an incoming byte througt the FSM and package the 
+*   bytes into a valid frame.  
+*   
+*   Preconditions: None.
+*
+*   Side Effects: None.
+*
+*   \param[in]  byte        Incoming byte
+*   \param[in]  handle      Driver instance handle
+*
+*******************************************************************************/
+static void processIncomingByte(uint8_t byte, VESC_Handle_t handle){
+
+    switch(driver_table[handle].fsm_state){
+
+        case VESC_FSM_WAIT_START:
+        {
+
+        }
+        break;
+
+        case VESC_FSM_WAIT_LEN:
+        {
+
+        }
+        break;
+
+        case VESC_FSM_WAIT_PAYLOAD:
+        {
+
+        }
+        break;
+
+        case VESC_FSM_WAIT_CRC_HIGH:
+        {
+
+        }
+        break;
+
+        case VESC_FSM_WAIT_CRC_LOW:
+        {
+
+        }
+        break;
+
+        case VESC_FSM_WAIT_END:
+        {
+
+        }
+        break;
+
+        case VESC_FSM_INVALID:
+        default:
+        {
+            //Do nothing... and contemplate the void...
+        }
+        break;
+    }
 }
 
 /******************************************************************************
