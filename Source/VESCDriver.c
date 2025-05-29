@@ -2,6 +2,7 @@
 *   Includes
 *******************************************************************************/
 #include <stdbool.h>
+#include <stdlib.h>
 #include "VESCDriver.h"
 
 /******************************************************************************
@@ -18,7 +19,7 @@
 /******************************************************************************
 *   Private Data Types
 *******************************************************************************/
-typedef VESC_FSM_State_e{
+typedef enum VESC_FSM_State_e{
     VESC_FSM_WAIT_START,
     VESC_FSM_WAIT_LEN,
     VESC_FSM_WAIT_PAYLOAD,
@@ -58,6 +59,18 @@ static VESC_Driver_t driver_table[VESC_DRIVER_MAX_INSTANCE] = {0};
 /******************************************************************************
 *   Private Functions Definitions
 *******************************************************************************/
+/***************************************************************************//*!
+*  \brief Is driver table full
+*
+*   This function return True if Driver table is full and False otherwise.
+*   
+*   Preconditions: None.
+*
+*   Side Effects: None.
+*
+*   \return     (True -> Full / False -> Not full)
+*
+*******************************************************************************/
 static bool isDriverTableFull(void){
 
     for(uint8_t i=0; i<VESC_DRIVER_MAX_INSTANCE; i++){
@@ -70,6 +83,19 @@ static bool isDriverTableFull(void){
     return true;
 }
 
+/***************************************************************************//*!
+*  \brief Get first available index in table
+*
+*   This function return the first available index in the driver table.
+*   If no index are available -> return INVALID_DRIVER_INDEX.
+*   
+*   Preconditions: None.
+*
+*   Side Effects: None.
+*
+*   \return     Table index
+*
+*******************************************************************************/
 static uint8_t getFirstAvailableDriverIndex(void){
 
     for(uint8_t i=0; i<VESC_DRIVER_MAX_INSTANCE; i++){
