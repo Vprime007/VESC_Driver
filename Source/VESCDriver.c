@@ -21,7 +21,8 @@
 *******************************************************************************/
 typedef enum VESC_FSM_State_e{
     VESC_FSM_WAIT_START,
-    VESC_FSM_WAIT_LEN,
+    VESC_FSM_WAIT_LEN_HIGH,
+    VESC_FSM_WAIT_LEN_LOW,
     VESC_FSM_WAIT_PAYLOAD,
     VESC_FSM_WAIT_CRC_HIGH,
     VESC_FSM_WAIT_CRC_LOW,
@@ -129,11 +130,35 @@ static void processIncomingByte(uint8_t byte, VESC_Handle_t handle){
 
         case VESC_FSM_WAIT_START:
         {
+            if(byte == 2){
+                //Payload <= 256 bytes
+                driver_table[handle].fsm_state = VESC_FSM_WAIT_LEN_LOW;
+
+                //Store new byte in rx buffer
+                driver_table[handle].rx_buffer[driver_table[handle].rx_cptr] = byte;
+                driver_table[handle].rx_cptr++;
+            }
+            else if(byte == 3){
+                //Payload > 256 bytes
+                driver_table[handle].fsm_state = VESC_FSM_WAIT_LEN_HIGH;
+
+                //Store new byte in rx buffer
+                driver_table[handle].rx_buffer[driver_table[handle].rx_cptr] = byte;
+                driver_table[handle].rx_cptr++;
+            }
+            else{
+                //Do nothing until we get a frame start byte...
+            }
+        }
+        break;
+
+        case VESC_FSM_WAIT_LEN_HIGH:
+        {
 
         }
         break;
 
-        case VESC_FSM_WAIT_LEN:
+        case VESC_FSM_WAIT_LEN_LOW:
         {
 
         }
