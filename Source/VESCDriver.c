@@ -135,19 +135,30 @@ static uint8_t getFirstAvailableDriverIndex(void){
 *******************************************************************************/
 static void processIncomingByte(uint8_t byte, VESC_Handle_t handle){
 
+    static uint16_t payload_index = 0;
+    static uint16_t payload_len = 0;
+
     switch(driver_table[handle].fsm_state){
 
         case VESC_FSM_WAIT_START:
         {
+            payload_index = 0;
+            payload_len = 0;
+
             if(byte == UART_SHORT_FRAME_ID){
                 //Payload <= 256 bytes
                 driver_table[handle].fsm_state = VESC_FSM_WAIT_LEN_LOW;
+
+                payload_index = 2; //Payload start at index 2 when short frame
 
                 //Store new byte in rx buffer
                 driver_table[handle].rx_buffer[driver_table[handle].rx_cptr] = byte;
                 driver_table[handle].rx_cptr++;
             }
             else if(byte == UART_LONG_FRAME_ID){
+
+                payload_index = 3; //Payload start at index 3 when long frame
+
                 //Payload > 256 bytes
                 driver_table[handle].fsm_state = VESC_FSM_WAIT_LEN_HIGH;
 
@@ -163,6 +174,8 @@ static void processIncomingByte(uint8_t byte, VESC_Handle_t handle){
 
         case VESC_FSM_WAIT_LEN_HIGH:
         {   
+            payload_len = (byte << 8); //Store high byte of payload length
+
             driver_table[handle].fsm_state = VESC_FSM_WAIT_LEN_LOW;
 
             //Store new byte in rx buffer
@@ -173,6 +186,8 @@ static void processIncomingByte(uint8_t byte, VESC_Handle_t handle){
 
         case VESC_FSM_WAIT_LEN_LOW:
         {
+            payload_len += byte; //Add low byte of payload length
+
             driver_table[handle].fsm_state = VESC_FSM_WAIT_PAYLOAD;
 
             //Store new byte in rx buffer
@@ -183,7 +198,14 @@ static void processIncomingByte(uint8_t byte, VESC_Handle_t handle){
 
         case VESC_FSM_WAIT_PAYLOAD:
         {
+            //Store new byte in rx buffer
+            driver_table[handle].rx_buffer[driver_table[handle].rx_cptr] = byte;
+            driver_table[handle].rx_cptr++;
 
+            if((driver_table[handle].rx_cptr >= (payload_index + payload_len))){
+                //We have received the full payload, now we can wait for CRC
+                driver_table[handle].fsm_state = VESC_FSM_WAIT_CRC_HIGH;
+            }
         }
         break;
 
@@ -237,8 +259,6 @@ static void processIncomingByte(uint8_t byte, VESC_Handle_t handle){
                 return;
             }
 
-            uint16_t payload_index = 0;
-            uint16_t payload_len = 0;
             uint16_t buffer_crc = 0;
 
             if(driver_table[handle].rx_buffer[0] == UART_LONG_FRAME_ID){
@@ -434,7 +454,65 @@ VESC_Ret_t VESC_RemoveDriver(VESC_Handle_t handle){
 *******************************************************************************/
 VESC_Ret_t VESC_SendCmd(VESC_Command_t command, VESC_Handle_t handle){
 
+    //Check if params are valid
     if(handle >= VESC_DRIVER_MAX_INSTANCE){
+        return VESC_STATUS_ERROR;
+    }
+
+    //Check if VESC Driver is active
+    if(driver_table[handle].active_flag == false){
+        return VESC_STATUS_ERROR;
+    }
+
+    uint16_t total_data_size = 0;
+
+    //Fill tx buffer with command data
+    if(command.length > 256){
+        driver_table[handle].tx_buffer[0] = UART_LONG_FRAME_ID;
+        driver_table[handle].tx_buffer[1] = (command.length >> 8) & 0xFF; //Length high byte
+        driver_table[handle].tx_buffer[2] = command.length & 0xFF; //Length low byte
+    
+        driver_table[handle].tx_buffer[3] = command.command_id; //Command ID
+        for(uint16_t i=0; i<command.length; i++){
+            driver_table[handle].tx_buffer[i + 4] = command.pData[i]; //Payload
+        }
+
+        //Calculate CRC
+        uint16_t crc = crc16(&(driver_table[handle].tx_buffer[3]), command.length + 1);
+        driver_table[handle].tx_buffer[command.length + 4] = (crc >> 8) & 0xFF; //CRC high byte
+        driver_table[handle].tx_buffer[command.length + 5] = crc & 0xFF; //CRC low byte
+
+        //Add end byte
+        driver_table[handle].tx_buffer[command.length + 6] = UART_FRAME_END;
+
+        total_data_size = command.length + 6; //3 bytes for header + 2 bytes for CRC + 1 byte for end byte
+    }
+    else{
+        driver_table[handle].tx_buffer[0] = UART_SHORT_FRAME_ID;
+        driver_table[handle].tx_buffer[1] = command.length; //Length
+
+        driver_table[handle].tx_buffer[2] = command.command_id; //Command ID
+        for(uint16_t i=0; i<command.length; i++){
+            driver_table[handle].tx_buffer[i + 3] = command.pData[i]; //Payload
+        }
+
+        //Calculate CRC
+        uint16_t crc = crc16(&(driver_table[handle].tx_buffer[2]), command.length + 1);
+        driver_table[handle].tx_buffer[command.length + 3] = (crc >> 8) & 0xFF; //CRC high byte
+        driver_table[handle].tx_buffer[command.length + 4] = crc & 0xFF; //CRC low byte
+
+        //Add end byte
+        driver_table[handle].tx_buffer[command.length + 5] = UART_FRAME_END;
+
+        total_data_size = command.length + 5; //2 bytes for header + 2 bytes for CRC + 1 byte for end byte
+    }
+
+    if(driver_table[handle].data_out_func != NULL){
+        //Send data out using the provided function
+        driver_table[handle].data_out_func(driver_table[handle].tx_buffer, total_data_size);
+    }
+    else{
+        //No data out function provided, return error
         return VESC_STATUS_ERROR;
     }
 
