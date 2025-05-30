@@ -153,14 +153,22 @@ static void processIncomingByte(uint8_t byte, VESC_Handle_t handle){
         break;
 
         case VESC_FSM_WAIT_LEN_HIGH:
-        {
+        {   
+            driver_table[handle].fsm_state = VESC_FSM_WAIT_LEN_LOW;
 
+            //Store new byte in rx buffer
+            driver_table[handle].rx_buffer[driver_table[handle].rx_cptr] = byte;
+            driver_table[handle].rx_cptr++;
         }
         break;
 
         case VESC_FSM_WAIT_LEN_LOW:
         {
+            driver_table[handle].fsm_state = VESC_FSM_WAIT_PAYLOAD;
 
+            //Store new byte in rx buffer
+            driver_table[handle].rx_buffer[driver_table[handle].rx_cptr] = byte;
+            driver_table[handle].rx_cptr++;
         }
         break;
 
@@ -172,19 +180,29 @@ static void processIncomingByte(uint8_t byte, VESC_Handle_t handle){
 
         case VESC_FSM_WAIT_CRC_HIGH:
         {
+            driver_table[handle].fsm_state = VESC_FSM_WAIT_CRC_LOW;
 
+            //Store new byte in rx buffer
+            driver_table[handle].rx_buffer[driver_table[handle].rx_cptr] = byte;
+            driver_table[handle].rx_cptr++;
         }
         break;
 
         case VESC_FSM_WAIT_CRC_LOW:
         {
+            driver_table[handle].fsm_state = VESC_FSM_WAIT_END;
 
+            //Store new byte in rx buffer
+            driver_table[handle].rx_buffer[driver_table[handle].rx_cptr] = byte;
+            driver_table[handle].rx_cptr++;
         }
         break;
 
         case VESC_FSM_WAIT_END:
         {
+            //Compare received CRC to calculated CRC
 
+            
         }
         break;
 
