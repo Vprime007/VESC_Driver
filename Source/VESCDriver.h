@@ -120,5 +120,25 @@ VESC_Ret_t VESC_RemoveDriver(VESC_Handle_t handle);
 *******************************************************************************/
 VESC_Ret_t VESC_SendCmd(VESC_Command_t command, VESC_Handle_t handle);
 
+/***************************************************************************//*!
+*  \brief Pass incoming bytes to VESC instance
+*
+*   This function is used to pass incoming bytes to a VESC Driver instance.
+*
+*   Preconditions: Instance is active
+*
+*   Side Effects: None.
+*
+*   \param[in]    pBytes             Pointer to incoming bytes.
+*   \param[in]    length             Length of incoming bytes.
+*   \param[in]    handle             VESC Driver instance handle.
+*
+*   \return     operation status
+*
+*******************************************************************************/
+VESC_Ret_t VESC_PassIncomingBytes(uint8_t *pBytes, 
+                                  uint16_t length, 
+                                  VESC_Handle_t handle);
+
 
 #endif//_VESC_DRIVER_H

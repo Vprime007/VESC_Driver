@@ -441,6 +441,47 @@ VESC_Ret_t VESC_SendCmd(VESC_Command_t command, VESC_Handle_t handle){
     return VESC_STATUS_OK;
 }
 
+/***************************************************************************//*!
+*  \brief Pass incoming bytes to VESC instance
+*
+*   This function is used to pass incoming bytes to a VESC Driver instance.
+*
+*   Preconditions: Instance is active
+*
+*   Side Effects: None.
+*
+*   \param[in]    pBytes             Pointer to incoming bytes.
+*   \param[in]    length             Length of incoming bytes.
+*   \param[in]    handle             VESC Driver instance handle.
+*
+*   \return     operation status
+*
+*******************************************************************************/
+VESC_Ret_t VESC_PassIncomingBytes(uint8_t *pBytes, 
+                                  uint16_t length, 
+                                  VESC_Handle_t handle){
+
+    //Check if params are valid
+    if((pBytes == NULL) || (length == 0) || 
+       (length > MAX_PACKET_BUFFER_SIZE) || 
+       (handle >= VESC_DRIVER_MAX_INSTANCE)){
+
+        return VESC_STATUS_ERROR;
+    }
+
+    //Check if VESC Driver is active
+    if(!driver_table[handle].active_flag){
+        return VESC_STATUS_ERROR;
+    }
+
+    //Procees each incoming byte
+    for(uint16_t i=0; i<length; i++){
+        processIncomingByte(pBytes[i], handle);
+    }
+
+    return VESC_STATUS_OK;
+}
+
 /******************************************************************************
 *   Interrupts
 *******************************************************************************/
