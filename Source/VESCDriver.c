@@ -3,13 +3,22 @@
 *******************************************************************************/
 #include <stdbool.h>
 #include <stdlib.h>
+
 #include "VESCDriver.h"
+#include "crc.h"
 
 /******************************************************************************
 *   Private Definitions
 *******************************************************************************/
 #define MAX_PACKET_BUFFER_SIZE              (512 + 8)
 #define INVALID_DRIVER_INDEX                (0xFF)
+
+#define UART_FRAME_START_OFFSET             (0)
+#define UART_FRAME_START_SIZE               (1)//Byte
+
+#define UART_SHORT_FRAME_ID                 (2)
+#define UART_LONG_FRAME_ID                  (3)
+#define UART_FRAME_END                      (3)
 
 /******************************************************************************
 *   Private Macros
@@ -130,7 +139,7 @@ static void processIncomingByte(uint8_t byte, VESC_Handle_t handle){
 
         case VESC_FSM_WAIT_START:
         {
-            if(byte == 2){
+            if(byte == UART_SHORT_FRAME_ID){
                 //Payload <= 256 bytes
                 driver_table[handle].fsm_state = VESC_FSM_WAIT_LEN_LOW;
 
@@ -138,7 +147,7 @@ static void processIncomingByte(uint8_t byte, VESC_Handle_t handle){
                 driver_table[handle].rx_buffer[driver_table[handle].rx_cptr] = byte;
                 driver_table[handle].rx_cptr++;
             }
-            else if(byte == 3){
+            else if(byte == UART_LONG_FRAME_ID){
                 //Payload > 256 bytes
                 driver_table[handle].fsm_state = VESC_FSM_WAIT_LEN_HIGH;
 
@@ -199,10 +208,88 @@ static void processIncomingByte(uint8_t byte, VESC_Handle_t handle){
         break;
 
         case VESC_FSM_WAIT_END:
-        {
-            //Compare received CRC to calculated CRC
+        {   
+            //Check if end byte is valid
+            if(byte != UART_FRAME_END){
+                //Clean rx_buffer and cptr 
+                for(uint16_t i=0; i<MAX_PACKET_BUFFER_SIZE; i++){
+                    driver_table[handle].rx_buffer[i] = 0;
+                }
+                driver_table[handle].rx_cptr = 0;
 
+                //Restart frame processing
+                driver_table[handle].fsm_state = VESC_FSM_WAIT_START;
+                return;
+            }
+
+            if(driver_table[handle].rtn_callback == NULL){
+                //No need to process further... the driver doesn't
+                //give a shit about returned data...
+
+                //Clean rx_buffer and cptr 
+                for(uint16_t i=0; i<MAX_PACKET_BUFFER_SIZE; i++){
+                    driver_table[handle].rx_buffer[i] = 0;
+                }
+                driver_table[handle].rx_cptr = 0;
+
+                //Restart frame processing
+                driver_table[handle].fsm_state = VESC_FSM_WAIT_START;
+                return;
+            }
+
+            uint16_t payload_index = 0;
+            uint16_t payload_len = 0;
+            uint16_t buffer_crc = 0;
+
+            if(driver_table[handle].rx_buffer[0] == UART_LONG_FRAME_ID){
+                
+                payload_index = 3;//Payload start at index 3 when long frame
+                
+                //Extract payload len from buffer
+                payload_len = (driver_table[handle].rx_buffer[1] << 8);
+                payload_len += (driver_table[handle].rx_buffer[2]);
+            }
+            else{
+
+                payload_index = 2;//Payload start at index 2 when short frame
+
+                //Extract payload len from buffer
+                payload_len = driver_table[handle].rx_buffer[1];
+            }
+
+            //Extract CRC from buffer
+            buffer_crc = (driver_table[handle].rx_buffer[payload_index + payload_len] << 8);
+            buffer_crc += driver_table[handle].rx_buffer[payload_index + payload_len + 1];
+
+            //Compare received CRC to calculated CRC
+            uint16_t calculated_crc = crc16(&(driver_table[handle].rx_buffer[payload_index]), payload_len);
+            if(buffer_crc != calculated_crc){
+                //Clean rx_buffer and cptr 
+                for(uint16_t i=0; i<MAX_PACKET_BUFFER_SIZE; i++){
+                    driver_table[handle].rx_buffer[i] = 0;
+                }
+                driver_table[handle].rx_cptr = 0;
+
+                //Restart frame processing
+                driver_table[handle].fsm_state = VESC_FSM_WAIT_START;
+                return;
+            }
+
+            //Pass data to the return callback of the driver
+            driver_table[handle].rtn_callback(driver_table[handle].rx_buffer[payload_index],
+                                              &(driver_table[handle].rx_buffer[payload_index+1]),
+                                              payload_len);
             
+            //Flush data and wait for new frame
+            //Clean rx_buffer and cptr 
+            for(uint16_t i=0; i<MAX_PACKET_BUFFER_SIZE; i++){
+                driver_table[handle].rx_buffer[i] = 0;
+            }
+            driver_table[handle].rx_cptr = 0;
+
+            //Restart frame processing
+            driver_table[handle].fsm_state = VESC_FSM_WAIT_START;
+            return;                           
         }
         break;
 
@@ -247,6 +334,7 @@ VESC_Ret_t VESC_InitDriver(void){
 
     return VESC_STATUS_OK;
 }
+
 /***************************************************************************//*!
 *  \brief Add VESC driver instance.
 *
@@ -257,12 +345,15 @@ VESC_Ret_t VESC_InitDriver(void){
 *   Side Effects: None.
 *
 *   \param[in]   data_out_func      Function used to send byte out to VESC.
+*   \param[in]   rtn_callback       Function call when data is return from the VESC.
 *   \param[out]  pHandle            VESC Driver instance handle.
 *
 *   \return     operation status
 *
 *******************************************************************************/
-VESC_Ret_t VESC_AddDriver(VESC_SendOutDataFunc data_out_func, VESC_Handle_t *pHandle){
+VESC_Ret_t VESC_AddDriver(VESC_SendOutDataFunc data_out_func, 
+                          VESC_CmdReturnCallback rtn_callback,
+                          VESC_Handle_t *pHandle){
 
     //Check if params are valid
     if((pHandle == NULL) || (data_out_func == NULL)){
@@ -283,7 +374,7 @@ VESC_Ret_t VESC_AddDriver(VESC_SendOutDataFunc data_out_func, VESC_Handle_t *pHa
     //Store new instance param in table
     driver_table[index].fsm_state = VESC_FSM_WAIT_START;
     driver_table[index].data_out_func = data_out_func;
-    driver_table[index].rtn_callback = NULL;
+    driver_table[index].rtn_callback = rtn_callback;
     driver_table[index].rx_cptr = 0;
 
     for(uint16_t i=0; i<MAX_PACKET_BUFFER_SIZE; i++){
@@ -341,10 +432,7 @@ VESC_Ret_t VESC_RemoveDriver(VESC_Handle_t handle){
 *   \return     operation status
 *
 *******************************************************************************/
-VESC_Ret_t VESC_SendCmd(VESC_Command_t command, 
-                        VESC_CmdReturnCallback callback, 
-                        VESC_Handle_t handle){
-
+VESC_Ret_t VESC_SendCmd(VESC_Command_t command, VESC_Handle_t handle){
 
     if(handle >= VESC_DRIVER_MAX_INSTANCE){
         return VESC_STATUS_ERROR;

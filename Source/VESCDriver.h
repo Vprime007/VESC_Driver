@@ -74,12 +74,15 @@ VESC_Ret_t VESC_InitDriver(void);
 *   Side Effects: None.
 *
 *   \param[in]   data_out_func      Function used to send byte out to VESC.
+*   \param[in]   rtn_callback       Function call when data is return from the VESC.
 *   \param[out]  pHandle            VESC Driver instance handle.
 *
 *   \return     operation status
 *
 *******************************************************************************/
-VESC_Ret_t VESC_AddDriver(VESC_SendOutDataFunc data_out_func, VESC_Handle_t *pHandle);
+VESC_Ret_t VESC_AddDriver(VESC_SendOutDataFunc data_out_func, 
+                          VESC_CmdReturnCallback rtn_callback,
+                          VESC_Handle_t *pHandle);
 
 /***************************************************************************//*!
 *  \brief Remove VESC driver instance.
@@ -115,9 +118,7 @@ VESC_Ret_t VESC_RemoveDriver(VESC_Handle_t handle);
 *   \return     operation status
 *
 *******************************************************************************/
-VESC_Ret_t VESC_SendCmd(VESC_Command_t command, 
-                        VESC_CmdReturnCallback callback, 
-                        VESC_Handle_t handle);
+VESC_Ret_t VESC_SendCmd(VESC_Command_t command, VESC_Handle_t handle);
 
 
 #endif//_VESC_DRIVER_H
