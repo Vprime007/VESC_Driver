@@ -519,6 +519,27 @@ VESC_Ret_t VESC_SendCmd(VESC_Command_t command, VESC_Handle_t handle){
     return VESC_STATUS_OK;
 }
 
+VESC_Ret_t VESC_SetDutyCycle(uint32_t duty_cycle, VESC_Handle_t handle){
+
+    return VESC_STATUS_OK;
+}
+
+VESC_Ret_t VESC_SetCurrent(uint32_t current_ma, VESC_Handle_t handle){
+
+    return VESC_STATUS_OK;
+}
+
+VESC_Ret_t VESC_SetCurrentBrake(uint32_t current_ma, VESC_Handle_t handle){
+
+    return VESC_STATUS_OK;
+}
+
+VESC_Ret_t VESC_SetRPM(uint32_t rpm, VESC_Handle_t handle){
+
+    return VESC_STATUS_OK;
+}
+
+
 /***************************************************************************//*!
 *  \brief Pass incoming bytes to VESC instance
 *
