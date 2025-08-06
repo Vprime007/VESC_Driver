@@ -465,6 +465,7 @@ VESC_Ret_t VESC_SendCmd(VESC_Command_t command, VESC_Handle_t handle){
     }
 
     uint16_t total_data_size = 0;
+    command.length += 1;//Add one byte for the CMD ID
 
     //Fill tx buffer with command data
     if(command.length > 256){
@@ -520,6 +521,16 @@ VESC_Ret_t VESC_SendCmd(VESC_Command_t command, VESC_Handle_t handle){
 }
 
 VESC_Ret_t VESC_SetDutyCycle(uint32_t duty_cycle, VESC_Handle_t handle){
+
+    VESC_Command_t cmd = {
+        .command_id = COMM_SET_DUTY,
+        .length = sizeof(duty_cycle),
+        .pData = (uint8_t*)&duty_cycle,
+    };
+
+    if(VESC_STATUS_OK != VESC_SendCmd(cmd, handle)){
+        return VESC_STATUS_ERROR;
+    }
 
     return VESC_STATUS_OK;
 }
