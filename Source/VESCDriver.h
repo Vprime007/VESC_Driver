@@ -190,6 +190,58 @@ VESC_Ret_t VESC_SetCurrentBrake(int32_t current_ma, VESC_Handle_t handle);
 VESC_Ret_t VESC_SetRPM(int32_t rpm, VESC_Handle_t handle);
 
 /***************************************************************************//*!
+*  \brief Set Motor relative current.
+*
+*   This function send a COMM_SET_CURRENT_REL command to a VESC Driver instance.
+*   The motor current will be set relatively to it's maximum current.
+*
+*   Preconditions: Instance is active
+*
+*   Side Effects: None.
+*
+*   \param[in]    current_rel        Relative current (100% max current -> 100000)
+*   \param[in]    handle             VESC Driver instance handle.
+*
+*   \return     operation status
+*
+*******************************************************************************/
+VESC_Ret_t VESC_SetCurrentRel(int32_t current_rel, VESC_Handle_t handle);
+
+/***************************************************************************//*!
+*  \brief Send comm keep alive.
+*
+*   This function send a COMM_ALIVE command to a VESC Driver instance to 
+*   prevent a communication timeout.
+*
+*   Preconditions: Instance is active
+*
+*   Side Effects: None.
+*
+*   \param[in]    handle             VESC Driver instance handle.
+*
+*   \return     operation status
+*
+*******************************************************************************/
+VESC_Ret_t VESC_SendKeepAlive(VESC_Handle_t handle);
+
+/***************************************************************************//*!
+*  \brief Send device reboot.
+*
+*   This function send a COMM_REEBOT command to a VESC Driver instance to 
+*   trigger a device reboot.
+*
+*   Preconditions: Instance is active
+*
+*   Side Effects: None.
+*
+*   \param[in]    handle             VESC Driver instance handle.
+*
+*   \return     operation status
+*
+*******************************************************************************/
+VESC_Ret_t VESC_SendReboot(VESC_Handle_t handle);
+
+/***************************************************************************//*!
 *  \brief Pass incoming bytes to VESC instance
 *
 *   This function is used to pass incoming bytes to a VESC Driver instance.

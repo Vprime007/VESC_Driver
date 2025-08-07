@@ -466,13 +466,12 @@ VESC_Ret_t VESC_SendCmd(VESC_Command_t command, VESC_Handle_t handle){
     }
 
     uint16_t total_data_size = 0;
-    command.length += 1;//Add one byte for the CMD ID
 
     //Fill tx buffer with command data
-    if(command.length > 256){
+    if((command.length+1) > 256){
         driver_table[handle].tx_buffer[0] = UART_LONG_FRAME_ID;
-        driver_table[handle].tx_buffer[1] = (command.length >> 8) & 0xFF; //Length high byte
-        driver_table[handle].tx_buffer[2] = command.length & 0xFF; //Length low byte
+        driver_table[handle].tx_buffer[1] = ((command.length+1) >> 8) & 0xFF; //Length high byte
+        driver_table[handle].tx_buffer[2] = (command.length+1) & 0xFF; //Length low byte
     
         driver_table[handle].tx_buffer[3] = command.command_id; //Command ID
         for(uint16_t i=0; i<command.length; i++){
@@ -491,7 +490,7 @@ VESC_Ret_t VESC_SendCmd(VESC_Command_t command, VESC_Handle_t handle){
     }
     else{
         driver_table[handle].tx_buffer[0] = UART_SHORT_FRAME_ID;
-        driver_table[handle].tx_buffer[1] = command.length; //Length
+        driver_table[handle].tx_buffer[1] = (command.length+1); //Length
 
         driver_table[handle].tx_buffer[2] = command.command_id; //Command ID
         for(uint16_t i=0; i<command.length; i++){
@@ -680,6 +679,119 @@ VESC_Ret_t VESC_SetRPM(int32_t rpm, VESC_Handle_t handle){
         .command_id = COMM_SET_RPM,
         .length = sizeof(rpm),
         .pData = data_to_send,
+    };
+
+    return VESC_SendCmd(cmd, handle);
+}
+
+/***************************************************************************//*!
+*  \brief Set Motor relative current.
+*
+*   This function send a COMM_SET_CURRENT_REL command to a VESC Driver instance.
+*   The motor current will be set relatively to it's maximum current.
+*
+*   Preconditions: Instance is active
+*
+*   Side Effects: None.
+*
+*   \param[in]    current_rel        Relative current (100% max current -> 100000)
+*   \param[in]    handle             VESC Driver instance handle.
+*
+*   \return     operation status
+*
+*******************************************************************************/
+VESC_Ret_t VESC_SetCurrentRel(int32_t current_rel, VESC_Handle_t handle){
+
+    //Check if params are valid
+    if(handle >= VESC_DRIVER_MAX_INSTANCE){
+        return VESC_STATUS_ERROR;
+    }
+
+    //Check if VESC Driver is active
+    if(driver_table[handle].active_flag == false){
+        return VESC_STATUS_ERROR;
+    }
+
+    //Re-format current_rel value
+    uint8_t data_to_send[4] = {0};
+    buffer_append_int32(data_to_send, current_rel, data_to_send);
+
+    VESC_Command_t cmd = {
+        .command_id = COMM_SET_CURRENT_REL,
+        .length = sizeof(current_rel),
+        .pData = data_to_send,
+    };
+
+    return VESC_SendCmd(cmd, handle);
+}
+
+/***************************************************************************//*!
+*  \brief Send comm keep alive.
+*
+*   This function send a COMM_ALIVE command to a VESC Driver instance to 
+*   prevent a communication timeout.
+*
+*   Preconditions: Instance is active
+*
+*   Side Effects: None.
+*
+*   \param[in]    handle             VESC Driver instance handle.
+*
+*   \return     operation status
+*
+*******************************************************************************/
+VESC_Ret_t VESC_SendKeepAlive(VESC_Handle_t handle){
+
+    //Check if params are valid
+    if(handle >= VESC_DRIVER_MAX_INSTANCE){
+        return VESC_STATUS_ERROR;
+    }
+
+    //Check if VESC Driver is active
+    if(driver_table[handle].active_flag == false){
+        return VESC_STATUS_ERROR;
+    }
+
+    VESC_Command_t cmd = {
+        .command_id = COMM_ALIVE,
+        .length = 0,
+        .pData = NULL,
+    };
+
+    return VESC_SendCmd(cmd, handle);
+}
+
+/***************************************************************************//*!
+*  \brief Send device reboot.
+*
+*   This function send a COMM_REEBOT command to a VESC Driver instance to 
+*   trigger a device reboot.
+*
+*   Preconditions: Instance is active
+*
+*   Side Effects: None.
+*
+*   \param[in]    handle             VESC Driver instance handle.
+*
+*   \return     operation status
+*
+*******************************************************************************/
+VESC_Ret_t VESC_SendReboot(VESC_Handle_t handle){
+
+    //Check if params are valid
+    if(handle >= VESC_DRIVER_MAX_INSTANCE){
+        return VESC_STATUS_ERROR;
+    }
+
+    //Check if VESC Driver is active
+    if(driver_table[handle].active_flag == false){
+        return VESC_STATUS_ERROR;
+    }
+
+    VESC_Command_t cmd = {
+        .command_id = COMM_REBOOT,
+        .length = 0,
+        .pData = NULL,
     };
 
     return VESC_SendCmd(cmd, handle);
