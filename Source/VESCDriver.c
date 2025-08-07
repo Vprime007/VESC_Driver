@@ -5,6 +5,7 @@
 #include <stdlib.h>
 
 #include "VESCDriver.h"
+#include "buffer.h"
 #include "crc.h"
 
 /******************************************************************************
@@ -520,36 +521,169 @@ VESC_Ret_t VESC_SendCmd(VESC_Command_t command, VESC_Handle_t handle){
     return VESC_STATUS_OK;
 }
 
-VESC_Ret_t VESC_SetDutyCycle(uint32_t duty_cycle, VESC_Handle_t handle){
+/***************************************************************************//*!
+*  \brief Send COMM_SET_DUTY command.
+*
+*   This function is used to send a COMM_SET_DUTY command to 
+*   a VESC Driver instance.
+*
+*   Preconditions: Instance is active
+*
+*   Side Effects: None.
+*
+*   \param[in]    duty_cycle         Duty cycle value (100% -> 100000).
+*   \param[in]    handle             VESC Driver instance handle.
+*
+*   \return     operation status
+*
+*******************************************************************************/
+VESC_Ret_t VESC_SetDutyCycle(int32_t duty_cycle, VESC_Handle_t handle){
+
+    //Check if params are valid
+    if(handle >= VESC_DRIVER_MAX_INSTANCE){
+        return VESC_STATUS_ERROR;
+    }
+
+    //Check if VESC Driver is active
+    if(driver_table[handle].active_flag == false){
+        return VESC_STATUS_ERROR;
+    }
+
+    //Re-format duty_cycle value
+    uint8_t data_to_send[4] = {0};
+    buffer_append_int32(data_to_send, duty_cycle, data_to_send);
 
     VESC_Command_t cmd = {
         .command_id = COMM_SET_DUTY,
         .length = sizeof(duty_cycle),
-        .pData = (uint8_t*)&duty_cycle,
+        .pData = data_to_send,
     };
 
-    if(VESC_STATUS_OK != VESC_SendCmd(cmd, handle)){
+    return VESC_SendCmd(cmd, handle);
+}
+
+/***************************************************************************//*!
+*  \brief Send COMM_SET_CURRENT command.
+*
+*   This function is used to send a COMM_SET_CURRENT command to 
+*   a VESC Driver instance.
+*
+*   Preconditions: Instance is active
+*
+*   Side Effects: None.
+*
+*   \param[in]    current_ma         Current in ma.
+*   \param[in]    handle             VESC Driver instance handle.
+*
+*   \return     operation status
+*
+*******************************************************************************/
+VESC_Ret_t VESC_SetCurrent(int32_t current_ma, VESC_Handle_t handle){
+
+    //Check if params are valid
+    if(handle >= VESC_DRIVER_MAX_INSTANCE){
         return VESC_STATUS_ERROR;
     }
 
-    return VESC_STATUS_OK;
+    //Check if VESC Driver is active
+    if(driver_table[handle].active_flag == false){
+        return VESC_STATUS_ERROR;
+    }
+
+    //Re-format current_ma value
+    uint8_t data_to_send[4] = {0};
+    buffer_append_int32(data_to_send, current_ma, data_to_send);
+
+    VESC_Command_t cmd = {
+        .command_id = COMM_SET_CURRENT,
+        .length = sizeof(current_ma),
+        .pData = data_to_send,
+    };
+
+    return VESC_SendCmd(cmd, handle);
 }
 
-VESC_Ret_t VESC_SetCurrent(uint32_t current_ma, VESC_Handle_t handle){
+/***************************************************************************//*!
+*  \brief Send COMM_SET_CURRENT_BRAKE command.
+*
+*   This function is used to send a COMM_SET_CURRENT_BRAKE command to 
+*   a VESC Driver instance.
+*
+*   Preconditions: Instance is active
+*
+*   Side Effects: None.
+*
+*   \param[in]    current_ma         Brake current in ma.
+*   \param[in]    handle             VESC Driver instance handle.
+*
+*   \return     operation status
+*
+*******************************************************************************/
+VESC_Ret_t VESC_SetCurrentBrake(int32_t current_ma, VESC_Handle_t handle){
 
-    return VESC_STATUS_OK;
+    //Check if params are valid
+    if(handle >= VESC_DRIVER_MAX_INSTANCE){
+        return VESC_STATUS_ERROR;
+    }
+
+    //Check if VESC Driver is active
+    if(driver_table[handle].active_flag == false){
+        return VESC_STATUS_ERROR;
+    }
+
+    //Re-format current_brake_ma value
+    uint8_t data_to_send[4] = {0};
+    buffer_append_int32(data_to_send, current_ma, data_to_send);
+
+    VESC_Command_t cmd = {
+        .command_id = COMM_SET_CURRENT_BRAKE,
+        .length = sizeof(current_ma),
+        .pData = data_to_send,
+    };
+
+    return VESC_SendCmd(cmd, handle);
 }
 
-VESC_Ret_t VESC_SetCurrentBrake(uint32_t current_ma, VESC_Handle_t handle){
+/***************************************************************************//*!
+*  \brief Send COMM_SET_RPM command.
+*
+*   This function is used to send a COMM_SET_RPM command to 
+*   a VESC Driver instance.
+*
+*   Preconditions: Instance is active
+*
+*   Side Effects: None.
+*
+*   \param[in]    rpm                Motor RPM.
+*   \param[in]    handle             VESC Driver instance handle.
+*
+*   \return     operation status
+*
+*******************************************************************************/
+VESC_Ret_t VESC_SetRPM(int32_t rpm, VESC_Handle_t handle){
 
-    return VESC_STATUS_OK;
+    //Check if params are valid
+    if(handle >= VESC_DRIVER_MAX_INSTANCE){
+        return VESC_STATUS_ERROR;
+    }
+
+    //Check if VESC Driver is active
+    if(driver_table[handle].active_flag == false){
+        return VESC_STATUS_ERROR;
+    }
+
+    //Re-format rpm value
+    uint8_t data_to_send[4] = {0};
+    buffer_append_int32(data_to_send, rpm, data_to_send);
+
+    VESC_Command_t cmd = {
+        .command_id = COMM_SET_RPM,
+        .length = sizeof(rpm),
+        .pData = data_to_send,
+    };
+
+    return VESC_SendCmd(cmd, handle);
 }
-
-VESC_Ret_t VESC_SetRPM(uint32_t rpm, VESC_Handle_t handle){
-
-    return VESC_STATUS_OK;
-}
-
 
 /***************************************************************************//*!
 *  \brief Pass incoming bytes to VESC instance
@@ -595,5 +729,4 @@ VESC_Ret_t VESC_PassIncomingBytes(uint8_t *pBytes,
 /******************************************************************************
 *   Interrupts
 *******************************************************************************/
-
 

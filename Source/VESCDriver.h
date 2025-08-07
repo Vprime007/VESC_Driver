@@ -105,14 +105,11 @@ VESC_Ret_t VESC_RemoveDriver(VESC_Handle_t handle);
 *
 *   This function is used to send a command to a VESC Driver instance.
 *
-*   If you want to get a return answer from the VESC, use the VESC_CmdReturnCallback.
-*
 *   Preconditions: Instance is active
 *
 *   Side Effects: None.
 *
 *   \param[in]    command            Command to send.
-*   \param[in]    callback           Command return callback.
 *   \param[in]    handle             VESC Driver instance handle.
 *
 *   \return     operation status
@@ -120,13 +117,77 @@ VESC_Ret_t VESC_RemoveDriver(VESC_Handle_t handle);
 *******************************************************************************/
 VESC_Ret_t VESC_SendCmd(VESC_Command_t command, VESC_Handle_t handle);
 
-VESC_Ret_t VESC_SetDutyCycle(uint32_t duty_cycle, VESC_Handle_t handle);
+/***************************************************************************//*!
+*  \brief Send COMM_SET_DUTY command.
+*
+*   This function is used to send a COMM_SET_DUTY command to 
+*   a VESC Driver instance.
+*
+*   Preconditions: Instance is active
+*
+*   Side Effects: None.
+*
+*   \param[in]    duty_cycle         Duty cycle value (100% -> 100000).
+*   \param[in]    handle             VESC Driver instance handle.
+*
+*   \return     operation status
+*
+*******************************************************************************/
+VESC_Ret_t VESC_SetDutyCycle(int32_t duty_cycle, VESC_Handle_t handle);
 
-VESC_Ret_t VESC_SetCurrent(uint32_t current_ma, VESC_Handle_t handle);
+/***************************************************************************//*!
+*  \brief Send COMM_SET_CURRENT command.
+*
+*   This function is used to send a COMM_SET_CURRENT command to 
+*   a VESC Driver instance.
+*
+*   Preconditions: Instance is active
+*
+*   Side Effects: None.
+*
+*   \param[in]    current_ma         Current in ma.
+*   \param[in]    handle             VESC Driver instance handle.
+*
+*   \return     operation status
+*
+*******************************************************************************/
+VESC_Ret_t VESC_SetCurrent(int32_t current_ma, VESC_Handle_t handle);
 
-VESC_Ret_t VESC_SetCurrentBrake(uint32_t current_ma, VESC_Handle_t handle);
+/***************************************************************************//*!
+*  \brief Send COMM_SET_CURRENT_BRAKE command.
+*
+*   This function is used to send a COMM_SET_CURRENT_BRAKE command to 
+*   a VESC Driver instance.
+*
+*   Preconditions: Instance is active
+*
+*   Side Effects: None.
+*
+*   \param[in]    current_ma         Brake current in ma.
+*   \param[in]    handle             VESC Driver instance handle.
+*
+*   \return     operation status
+*
+*******************************************************************************/
+VESC_Ret_t VESC_SetCurrentBrake(int32_t current_ma, VESC_Handle_t handle);
 
-VESC_Ret_t VESC_SetRPM(uint32_t rpm, VESC_Handle_t handle);
+/***************************************************************************//*!
+*  \brief Send COMM_SET_RPM command.
+*
+*   This function is used to send a COMM_SET_RPM command to 
+*   a VESC Driver instance.
+*
+*   Preconditions: Instance is active
+*
+*   Side Effects: None.
+*
+*   \param[in]    rpm                Motor RPM.
+*   \param[in]    handle             VESC Driver instance handle.
+*
+*   \return     operation status
+*
+*******************************************************************************/
+VESC_Ret_t VESC_SetRPM(int32_t rpm, VESC_Handle_t handle);
 
 /***************************************************************************//*!
 *  \brief Pass incoming bytes to VESC instance
