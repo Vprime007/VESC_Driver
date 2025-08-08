@@ -486,7 +486,7 @@ VESC_Ret_t VESC_SendCmd(VESC_Command_t command, VESC_Handle_t handle){
         //Add end byte
         driver_table[handle].tx_buffer[command.length + 6] = UART_FRAME_END;
 
-        total_data_size = command.length + 6; //3 bytes for header + 2 bytes for CRC + 1 byte for end byte
+        total_data_size = command.length + 7; //3 bytes for header + 1 byte for command id + 2 bytes for CRC + 1 byte for end byte 
     }
     else{
         driver_table[handle].tx_buffer[0] = UART_SHORT_FRAME_ID;
@@ -505,7 +505,7 @@ VESC_Ret_t VESC_SendCmd(VESC_Command_t command, VESC_Handle_t handle){
         //Add end byte
         driver_table[handle].tx_buffer[command.length + 5] = UART_FRAME_END;
 
-        total_data_size = command.length + 5; //2 bytes for header + 2 bytes for CRC + 1 byte for end byte
+        total_data_size = command.length + 6; //2 bytes for header + 1 byte for command id + 2 bytes for CRC + 1 byte for end byte
     }
 
     if(driver_table[handle].data_out_func != NULL){
@@ -550,7 +550,8 @@ VESC_Ret_t VESC_SetDutyCycle(int32_t duty_cycle, VESC_Handle_t handle){
 
     //Re-format duty_cycle value
     uint8_t data_to_send[4] = {0};
-    buffer_append_int32(data_to_send, duty_cycle, data_to_send);
+    int32_t index = 0;
+    buffer_append_int32(data_to_send, duty_cycle, &index);
 
     VESC_Command_t cmd = {
         .command_id = COMM_SET_DUTY,
@@ -591,7 +592,8 @@ VESC_Ret_t VESC_SetCurrent(int32_t current_ma, VESC_Handle_t handle){
 
     //Re-format current_ma value
     uint8_t data_to_send[4] = {0};
-    buffer_append_int32(data_to_send, current_ma, data_to_send);
+    int32_t index = 0;
+    buffer_append_int32(data_to_send, current_ma, &index);
 
     VESC_Command_t cmd = {
         .command_id = COMM_SET_CURRENT,
@@ -632,7 +634,8 @@ VESC_Ret_t VESC_SetCurrentBrake(int32_t current_ma, VESC_Handle_t handle){
 
     //Re-format current_brake_ma value
     uint8_t data_to_send[4] = {0};
-    buffer_append_int32(data_to_send, current_ma, data_to_send);
+    int32_t index = 0;
+    buffer_append_int32(data_to_send, current_ma, &index);
 
     VESC_Command_t cmd = {
         .command_id = COMM_SET_CURRENT_BRAKE,
@@ -673,7 +676,8 @@ VESC_Ret_t VESC_SetRPM(int32_t rpm, VESC_Handle_t handle){
 
     //Re-format rpm value
     uint8_t data_to_send[4] = {0};
-    buffer_append_int32(data_to_send, rpm, data_to_send);
+    int32_t index = 0;
+    buffer_append_int32(data_to_send, rpm, &index);
 
     VESC_Command_t cmd = {
         .command_id = COMM_SET_RPM,
@@ -714,7 +718,8 @@ VESC_Ret_t VESC_SetCurrentRel(int32_t current_rel, VESC_Handle_t handle){
 
     //Re-format current_rel value
     uint8_t data_to_send[4] = {0};
-    buffer_append_int32(data_to_send, current_rel, data_to_send);
+    int32_t index = 0;
+    buffer_append_int32(data_to_send, current_rel, &index);
 
     VESC_Command_t cmd = {
         .command_id = COMM_SET_CURRENT_REL,

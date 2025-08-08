@@ -2,6 +2,7 @@
 *   Includes
 *******************************************************************************/
 #include <stdbool.h>
+#include <math.h>
 
 #include "buffer.h"
 
