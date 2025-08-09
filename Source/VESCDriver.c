@@ -521,6 +521,47 @@ VESC_Ret_t VESC_SendCmd(VESC_Command_t command, VESC_Handle_t handle){
 }
 
 /***************************************************************************//*!
+*  \brief Pass incoming bytes to VESC instance
+*
+*   This function is used to pass incoming bytes to a VESC Driver instance.
+*
+*   Preconditions: Instance is active
+*
+*   Side Effects: None.
+*
+*   \param[in]    pBytes             Pointer to incoming bytes.
+*   \param[in]    length             Length of incoming bytes.
+*   \param[in]    handle             VESC Driver instance handle.
+*
+*   \return     operation status
+*
+*******************************************************************************/
+VESC_Ret_t VESC_PassIncomingBytes(uint8_t *pBytes, 
+                                  uint16_t length, 
+                                  VESC_Handle_t handle){
+
+    //Check if params are valid
+    if((pBytes == NULL) || (length == 0) || 
+       (length > MAX_PACKET_BUFFER_SIZE) || 
+       (handle >= VESC_DRIVER_MAX_INSTANCE)){
+
+        return VESC_STATUS_ERROR;
+    }
+
+    //Check if VESC Driver is active
+    if(!driver_table[handle].active_flag){
+        return VESC_STATUS_ERROR;
+    }
+
+    //Procees each incoming byte
+    for(uint16_t i=0; i<length; i++){
+        processIncomingByte(pBytes[i], handle);
+    }
+
+    return VESC_STATUS_OK;
+}
+
+/***************************************************************************//*!
 *  \brief Send COMM_SET_DUTY command.
 *
 *   This function is used to send a COMM_SET_DUTY command to 
@@ -803,42 +844,94 @@ VESC_Ret_t VESC_SendReboot(VESC_Handle_t handle){
 }
 
 /***************************************************************************//*!
-*  \brief Pass incoming bytes to VESC instance
+*  \brief Get Vesc Driver values.
 *
-*   This function is used to pass incoming bytes to a VESC Driver instance.
+*   This function is used to get the VESC driver values. The returned payload
+*   is passed through the returned callback and can be extracted with
+*   VESC_ExtractReturnedValues() function.
 *
 *   Preconditions: Instance is active
 *
 *   Side Effects: None.
 *
-*   \param[in]    pBytes             Pointer to incoming bytes.
-*   \param[in]    length             Length of incoming bytes.
 *   \param[in]    handle             VESC Driver instance handle.
 *
 *   \return     operation status
 *
 *******************************************************************************/
-VESC_Ret_t VESC_PassIncomingBytes(uint8_t *pBytes, 
-                                  uint16_t length, 
-                                  VESC_Handle_t handle){
+VESC_Ret_t VESC_GetValues(VESC_Handle_t handle){
 
     //Check if params are valid
-    if((pBytes == NULL) || (length == 0) || 
-       (length > MAX_PACKET_BUFFER_SIZE) || 
-       (handle >= VESC_DRIVER_MAX_INSTANCE)){
-
+    if(handle >= VESC_DRIVER_MAX_INSTANCE){
         return VESC_STATUS_ERROR;
     }
 
     //Check if VESC Driver is active
-    if(!driver_table[handle].active_flag){
+    if(driver_table[handle].active_flag == false){
         return VESC_STATUS_ERROR;
     }
 
-    //Procees each incoming byte
-    for(uint16_t i=0; i<length; i++){
-        processIncomingByte(pBytes[i], handle);
+    VESC_Command_t cmd = {
+        .command_id = COMM_GET_VALUES,
+        .length = 0,
+        .pData = NULL,
+    };
+
+    return VESC_SendCmd(cmd, handle);
+}
+
+/***************************************************************************//*!
+*  \brief Extract returned values.
+*
+*   This function is used to extract values from the payload of the respond
+*   from the VESC_GetValues command.
+*
+*   Preconditions: Instance is active
+*
+*   Side Effects: None.
+*
+*   \param[in]      pRaw_data           Raw data buffer.
+*   \param[in]      length              Buffer length.
+*   \param[out]     pReturned_value     Pointer to store extracted values.     
+*
+*   \return         operation status
+*
+*******************************************************************************/
+VESC_Ret_t VESC_ExtractReturnedValues(uint8_t *pRaw_data, 
+                                      uint16_t length, 
+                                      VESC_Rtn_Values_t *pReturned_value){
+
+    if(pRaw_data == NULL || length <= 0 || pReturned_value == NULL){
+        return VESC_STATUS_ERROR;
     }
+
+    int32_t index = 0;
+    pReturned_value->fet_temperature = buffer_get_int16(pRaw_data, &index);
+    pReturned_value->motor_temperature = buffer_get_int16(pRaw_data, &index);
+    pReturned_value->avg_motor_current = buffer_get_int32(pRaw_data, &index);
+    pReturned_value->avg_input_current = buffer_get_int32(pRaw_data, &index);
+    pReturned_value->avg_id = buffer_get_int32(pRaw_data, &index);
+    pReturned_value->avg_iq = buffer_get_int32(pRaw_data, &index);
+    pReturned_value->duty_cycle_now = buffer_get_unt16(pRaw_data, &index);
+    pReturned_value->rpm = buffer_get_int32(pRaw_data, &index);
+    pReturned_value->input_voltage = buffer_get_uint16(pRaw_data, &index);
+    pReturned_value->amp_hour = buffer_get_int32(pRaw_data, &index);
+    pReturned_value->amp_hour_charged = buffer_get_int32(pRaw_data, &index);
+    pReturned_value->watt_hour = buffer_get_int32(pRaw_data , &index);
+    pReturned_value->watt_hour_charged = buffer_get_int32(pRaw_data, &index);
+    pReturned_value->tach = buffer_get_int32(pRaw_data, &index);
+    pReturned_value->tach_abs = buffer_get_int32(pRaw_data, &index);
+    pReturned_value->fault = pRaw_data[index];
+    index++;
+    pReturned_value->pid_pos_now = buffer_get_int32(pRaw_data, &index);
+    pReturned_value->ctrl_id = pRaw_data[index];
+    index++;
+    pReturned_value->ntc_temp_mos1 = buffer_get_int16(pRaw_data, &index);
+    pReturned_value->ntc_temp_mos2 = buffer_get_int16(pRaw_data, &index);
+    pReturned_value->ntc_temp_mos3 = buffer_get_int16(pRaw_data, &index);
+    pReturned_value->avg_vd = buffer_get_int32(pRaw_data, &index);
+    pReturned_value->avg_vq = buffer_get_int32(pRaw_data, &index);
+    pReturned_value->comm_status = pRaw_data[index];
 
     return VESC_STATUS_OK;
 }

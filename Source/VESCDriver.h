@@ -26,6 +26,33 @@ typedef void(*VESC_CmdReturnCallback)(COMM_PACKET_ID command_id,
                                       uint8_t *pData, 
                                       uint16_t length);
 
+typedef struct VESC_Rtn_Values_s{
+    int16_t fet_temperature;
+    int16_t motor_temperature;
+    int32_t avg_motor_current;
+    int32_t avg_input_current;
+    int32_t avg_id;
+    int32_t avg_iq;
+    int16_t duty_cycle_now;
+    int32_t rpm;
+    int16_t input_voltage;
+    int32_t amp_hour;
+    int32_t amp_hour_charged;
+    int32_t watt_hour;
+    int32_t watt_hour_charged;
+    int32_t tach;
+    int32_t tach_abs;
+    uint8_t fault;
+    int32_t pid_pos_now;
+    uint8_t ctrl_id;
+    int16_t ntc_temp_mos1;
+    int16_t ntc_temp_mos2;
+    int16_t ntc_temp_mos3;
+    int32_t avg_vd;
+    int32_t avg_vq;
+    uint8_t comm_status;
+}VESC_Rtn_Values_t;
+
 typedef struct VESC_Command_s{
     COMM_PACKET_ID command_id;
     uint8_t *pData;
@@ -116,6 +143,26 @@ VESC_Ret_t VESC_RemoveDriver(VESC_Handle_t handle);
 *
 *******************************************************************************/
 VESC_Ret_t VESC_SendCmd(VESC_Command_t command, VESC_Handle_t handle);
+
+/***************************************************************************//*!
+*  \brief Pass incoming bytes to VESC instance
+*
+*   This function is used to pass incoming bytes to a VESC Driver instance.
+*
+*   Preconditions: Instance is active
+*
+*   Side Effects: None.
+*
+*   \param[in]    pBytes             Pointer to incoming bytes.
+*   \param[in]    length             Length of incoming bytes.
+*   \param[in]    handle             VESC Driver instance handle.
+*
+*   \return     operation status
+*
+*******************************************************************************/
+VESC_Ret_t VESC_PassIncomingBytes(uint8_t *pBytes, 
+                                  uint16_t length, 
+                                  VESC_Handle_t handle);
 
 /***************************************************************************//*!
 *  \brief Send COMM_SET_DUTY command.
@@ -242,24 +289,42 @@ VESC_Ret_t VESC_SendKeepAlive(VESC_Handle_t handle);
 VESC_Ret_t VESC_SendReboot(VESC_Handle_t handle);
 
 /***************************************************************************//*!
-*  \brief Pass incoming bytes to VESC instance
+*  \brief Get Vesc Driver values.
 *
-*   This function is used to pass incoming bytes to a VESC Driver instance.
+*   This function is used to get the VESC driver values. The returned payload
+*   is passed through the returned callback and can be extracted with
+*   VESC_ExtractReturnedValues() function.
 *
 *   Preconditions: Instance is active
 *
 *   Side Effects: None.
 *
-*   \param[in]    pBytes             Pointer to incoming bytes.
-*   \param[in]    length             Length of incoming bytes.
 *   \param[in]    handle             VESC Driver instance handle.
 *
 *   \return     operation status
 *
 *******************************************************************************/
-VESC_Ret_t VESC_PassIncomingBytes(uint8_t *pBytes, 
-                                  uint16_t length, 
-                                  VESC_Handle_t handle);
+VESC_Ret_t VESC_GetValues(VESC_Handle_t handle);
 
+/***************************************************************************//*!
+*  \brief Extract returned values.
+*
+*   This function is used to extract values from the payload of the respond
+*   from the VESC_GetValues command.
+*
+*   Preconditions: Instance is active
+*
+*   Side Effects: None.
+*
+*   \param[in]      pRaw_data           Raw data buffer.
+*   \param[in]      length              Buffer length.
+*   \param[out]     pReturned_value     Pointer to store extracted values.     
+*
+*   \return         operation status
+*
+*******************************************************************************/
+VESC_Ret_t VESC_ExtractReturnedValues(uint8_t *pRaw_data, 
+                                      uint16_t length, 
+                                      VESC_Rtn_Values_t *pReturned_value);
 
 #endif//_VESC_DRIVER_H
